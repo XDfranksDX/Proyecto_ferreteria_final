@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista de Productos</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <h1>Lista de Productos</h1>
+
+  
+  <h2>Agregar Producto</h2>
+  <form id="addProductForm">
+    <label for="nombre">Nombre:</label>
+    <input type="text" id="nombre" name="nombre" required><br><br>
+    
+    <label for="descripcion">Descripción:</label><br>
+    <textarea id="descripcion" name="descripcion" required></textarea><br><br>
+    
+    <label for="precio">Precio:</label>
+    <input type="number" id="precio" name="precio" min="0" step="0.01" required><br><br>
+    
+    <label for="stock">Stock:</label>
+    <input type="number" id="stock" name="stock" min="0" required><br><br>
+    
+    <label for="categoria_id">Categoría ID:</label>
+    <input type="number" id="categoria_id" name="categoria_id" min="1" required><br><br>
+    
+    <button type="submit">Agregar Producto</button>
+  </form>
+
+
+  <h2>Productos</h2>
+  <table id="productTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Descripción</th>
+        <th>Precio</th>
+        <th>Stock</th>
+        <th>Categoría ID</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+  
+    </tbody>
+  </table>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+  
+      fetch('/productos')
+        .then(response => response.json())
+        .then(data => {
+          const productTable = document.getElementById('productTable').getElementsByTagName('tbody')[0];
+          data.forEach(product => {
+            const row = productTable.insertRow();
+            row.innerHTML = `
+              <td>${product.id}</td>
+              <td>${product.nombre}</td>
+              <td>${product.descripcion}</td>
+              <td>${product.precio}</td>
+              <td>${product.stock}</td>
+              <td>${product.categoria_id}</td>
+              <td>
+                <button onclick="deleteProduct(${product.id})">Eliminar</button>
+              </td>
+            `;
+          });
+        });
+
+
+      const addProductForm = document.getElementById('addProductForm');
+      addProductForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        const formData = new FormData(addProductForm);
+        fetch('/agregar-producto', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          alert(data.message); 
+          location.reload(); 
+        })
+        .catch(error => {
+          console.error('Error al agregar producto:', error);
+          alert('Error al agregar producto. Consulta la consola para más detalles.');
+        });
+      });
+
+    
+      function deleteProduct(productId) {
+        if (confirm(`¿Estás seguro de eliminar el producto con ID ${productId}?`)) {
+          fetch(`/eliminar-producto/${productId}`, {
+            method: 'DELETE'
+          })
+          .then(response => response.json())
+          .then(data => {
+            alert(data.message); 
+            location.reload();
+          })
+          .catch(error => {
+            console.error('Error al eliminar producto:', error);
+            alert('Error al eliminar producto. Consulta la consola para más detalles.');
+          });
+        }
+      }
+    });
+  </script>
+</body>
+</html>

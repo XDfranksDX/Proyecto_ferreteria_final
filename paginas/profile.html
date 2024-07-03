@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perfil</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav>
+    <div class="navbar-brand">
+      <a href="#">Gestion de inventario Ferreteria</a>
+    </div>
+    <ul class="navbar-menu">
+      <li>Bienvenido usuario, <span id="username"></span></li>
+      <li><a href="/logout">Cerrar su Sesión aqui</a></li>
+    </ul>
+  </nav>
+  <h1>Perfil de Usuario</h1>
+  <div class="content">
+    <h2>Lista de Productos</h2>
+    <table id="product-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Descripción</th>
+          <th>Precio</th>
+          <th>Stock</th>
+          <th>Categoría</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+     
+      </tbody>
+    </table>
+
+    <form id="add-product-form">
+      <h2>Agregar Producto</h2>
+      <label for="product-name">Nombre del Producto:</label>
+      <input type="text" id="product-name" name="product-name" required>
+      <br>
+      <label for="product-description">Descripción:</label>
+      <textarea id="product-description" name="product-description"></textarea>
+      <br>
+      <label for="product-price">Precio:</label>
+      <input type="number" id="product-price" name="product-price" step="0.01" required>
+      <br>
+      <label for="product-stock">Stock:</label>
+      <input type="number" id="product-stock" name="product-stock" required>
+      <br>
+      <label for="product-category">Categoría:</label>
+      <input type="number" id="product-category" name="product-category" required>
+      <br>
+      <button type="submit">Agregar</button>
+    </form>
+
+    <form id="edit-product-form" style="display:none;">
+      <h2>Editar Producto</h2>
+      <input type="hidden" id="edit-product-id">
+      <label for="edit-product-name">Nombre del Producto:</label>
+      <input type="text" id="edit-product-name" name="edit-product-name" required>
+      <br>
+      <label for="edit-product-description">Descripción:</label>
+      <textarea id="edit-product-description" name="edit-product-description"></textarea>
+      <br>
+      <label for="edit-product-price">Precio:</label>
+      <input type="number" id="edit-product-price" name="edit-product-price" step="0.01" required>
+      <br>
+      <label for="edit-product-stock">Stock:</label>
+      <input type="number" id="edit-product-stock" name="edit-product-stock" required>
+      <br>
+      <label for="edit-product-category">Categoría:</label>
+      <input type="number" id="edit-product-category" name="edit-product-category" required>
+      <br>
+      <button type="submit">Guardar Cambios</button>
+    </form>
+    
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      fetch('/api/user')
+        .then(response => response.json())
+        .then(data => {
+          if (data.username) {
+            document.getElementById('username').innerText = data.username;
+          } else {
+            window.location.href = '/login.html';
+          }
+        });
+  
+      fetchProducts();
+  
+      const addProductForm = document.getElementById('add-product-form');
+      addProductForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        const productName = document.getElementById('product-name').value;
+        const productDescription = document.getElementById('product-description').value;
+        const productPrice = document.getElementById('product-price').value;
+        const productStock = document.getElementById('product-stock').value;
+        const productCategory = document.getElementById('product-category').value;
+  
+        fetch('/agregar-producto', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            nombre: productName,
+            descripcion: productDescription,
+            precio: parseFloat(productPrice),
+            stock: parseInt(productStock),
+            categoria_id: parseInt(productCategory)
+          })
+        })
+        .then(response => {
+          if (response.ok) {
+            console.log('Producto agregado exitosamente');
+            fetchProducts(); 
+          } else {
+            console.error('Error al agregar producto');
+          }
+        })
+        .catch(error => console.error('Error en la solicitud:', error));
+      });
+  
+      const editProductForm = document.getElementById('edit-product-form');
+      editProductForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        const productId = document.getElementById('edit-product-id').value;
+        const productName = document.getElementById('edit-product-name').value;
+        const productDescription = document.getElementById('edit-product-description').value;
+        const productPrice = document.getElementById('edit-product-price').value;
+        const productStock = document.getElementById('edit-product-stock').value;
+        const productCategory = document.getElementById('edit-product-category').value;
+  
+        fetch(`/productos/${productId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            nombre: productName,
+            descripcion: productDescription,
+            precio: parseFloat(productPrice),
+            stock: parseInt(productStock),
+            categoria_id: parseInt(productCategory)
+          })
+        })
+        .then(response => {
+          if (response.ok) {
+            console.log('Producto editado exitosamente');
+            fetchProducts(); 
+            editProductForm.style.display = 'none'; 
+            addProductForm.style.display = 'block'; 
+          } else {
+            console.error('Error al editar producto');
+          }
+        })
+        .catch(error => console.error('Error en la solicitud:', error));
+      });
+  
+      function fetchProducts() {
+        fetch('/productos')
+          .then(response => response.json())
+          .then(data => {
+            const productTableBody = document.querySelector('#product-table tbody');
+            productTableBody.innerHTML = ''; 
+            data.forEach(product => {
+              const productRow = document.createElement('tr');
+              productRow.innerHTML = `
+                <td>${product.id}</td>
+                <td>${product.nombre}</td>
+                <td>${product.descripcion ? product.descripcion : '-'}</td>
+                <td>${product.precio}</td>
+                <td>${product.stock}</td>
+                <td>${product.categoria_id}</td>
+                <td>
+                  <button class="edit-product-btn" data-product-id="${product.id}">Editar</button>
+                  <button class="delete-product-btn" data-product-id="${product.id}">Eliminar</button>
+                </td>`;
+              productTableBody.appendChild(productRow);
+            });
+  
+            const editProductForm = document.getElementById('edit-product-form');
+editProductForm.addEventListener('submit', function(event) {
+  event.preventDefault();
+  const productId = document.getElementById('edit-product-id').value;
+  const productName = document.getElementById('edit-product-name').value;
+  const productDescription = document.getElementById('edit-product-description').value;
+  const productPrice = document.getElementById('edit-product-price').value;
+  const productStock = document.getElementById('edit-product-stock').value;
+  const productCategory = document.getElementById('edit-product-category').value;
+
+  fetch(`/productos/${productId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      nombre: productName,
+      descripcion: productDescription,
+      precio: parseFloat(productPrice),
+      stock: parseInt(productStock),
+      categoria_id: parseInt(productCategory)
+    })
+  })
+  .then(response => {
+    if (response.ok) {
+      console.log('Producto editado exitosamente');
+      fetchProducts();
+      editProductForm.style.display = 'none'; 
+      addProductForm.style.display = 'block'; 
+    } else {
+      console.error('Error al editar producto');
+    }
+  })
+  .catch(error => console.error('Error en la solicitud:', error));
+});
+
+            const editButtons = document.querySelectorAll('.edit-product-btn');
+            editButtons.forEach(btn => {
+              btn.addEventListener('click', handleEditProduct);
+            });
+  
+            const deleteButtons = document.querySelectorAll('.delete-product-btn');
+            deleteButtons.forEach(btn => {
+              btn.addEventListener('click', handleDeleteProduct);
+            });
+          })
+          .catch(error => console.error('Error al obtener productos:', error));
+      }
+  
+      function handleEditProduct(event) {
+        const productId = event.target.dataset.productId;
+        fetch(`/productos/${productId}`)
+          .then(response => response.json())
+          .then(product => {
+            document.getElementById('edit-product-id').value = product.id;
+            document.getElementById('edit-product-name').value = product.nombre;
+            document.getElementById('edit-product-description').value = product.descripcion;
+            document.getElementById('edit-product-price').value = product.precio;
+            document.getElementById('edit-product-stock').value = product.stock;
+            document.getElementById('edit-product-category').value = product.categoria_id;
+  
+            
+            document.getElementById('edit-product-form').style.display = 'block';
+            document.getElementById('add-product-form').style.display = 'none';
+          })
+          .catch(error => console.error('Error al obtener producto:', error));
+      }
+  
+      function handleDeleteProduct(event) {
+        const productId = event.target.dataset.productId;
+        fetch(`/productos/${productId}`, {
+          method: 'DELETE'
+        })
+        .then(response => {
+          if (response.ok) {
+            console.log(`Producto con ID ${productId} eliminado correctamente`);
+            fetchProducts(); 
+          } else {
+            console.error(`Error al eliminar producto con ID ${productId}`);
+          }
+        })
+        .catch(error => console.error('Error en la solicitud:', error));
+      }
+    });
+  </script>
+</body>
+</html>
