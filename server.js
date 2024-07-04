@@ -40,7 +40,7 @@ app.use(session({
   cookie: { secure: false } 
 }));
 
-// esta es la configuracion del passport (funcionando)
+
 app.use(passport.initialize());
 app.use(passport.session());
 
